@@ -5,7 +5,7 @@
     "outDir": "./lib",
     "rootDir": "./src",
     "strict": true,
-    "noImplicitAny": true,
+    "noImplicitAny": false, /* For decompress */
     "esModuleInterop": true,
     "noEmitOnError": true
   },

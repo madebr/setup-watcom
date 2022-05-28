@@ -4,7 +4,12 @@ import * as tc from "@actions/tool-cache";
 import * as path from "path";
 import * as fs from "fs";
 import * as child_process from "child_process";
-import * as exec from "@actions/exec";
+const decompress = require('decompress');
+const decompressTar = require('decompress-tar');
+const decompressTarbz2 = require('decompress-tarbz2');
+const decompressTargz = require('decompress-targz');
+const decompressTarxz = require('decompress-tarxz');
+const decompressUnzip = require('decompress-unzip');
 
 function getInputs(): ISetupWatcomSettings {
   let p_version = core.getInput("version");
@@ -100,12 +105,6 @@ async function run(): Promise<void> {
     core.info(`environment: ${settings.environment}`);
     core.info(`path_subdir: ${settings.path_subdir}`);
     core.endGroup();
-    if (settings.archive_type == "tar" && process.platform == "win32") {
-      core.startGroup("Install GNU tar (MSYS).");
-      process.env["Path"] = `C:\\msys64\\usr\\bin;${originalPath}`;
-      await exec.exec("pacman -S --noconfirm tar");
-      core.endGroup();
-    }
 
     let watcom_tar_path: string;
     if (settings.archive_type == "tar") {
@@ -128,6 +127,15 @@ async function run(): Promise<void> {
     core.startGroup(`Extracting to ${settings.location}.`)
     let watcom_path: fs.PathLike = "";
     if (settings.archive_type == "tar") {
+      await decompress(watcom_tar_path, settings.location, {
+        plugins: [
+          decompressTar(),
+          decompressTarbz2(),
+          decompressTargz(),
+          decompressTarxz(),
+          decompressUnzip()
+        ]
+      });
       if (process.platform == "win32") {
         watcom_path = await tc.extractTar(watcom_tar_path, settings.location, ["x", "--exclude=wlink"]);
       } else {
